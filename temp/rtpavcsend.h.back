@@ -1,0 +1,10 @@
+#include <ortp/ortp.h>  
+#include <signal.h>  
+#include <stdlib.h>  
+#include <sys/types.h>  
+#include <sys/time.h>  
+#include <stdio.h>  
+RtpSession *pRtpSession = NULL;  
+int  rtpExit(RtpSession *session);
+RtpSession * rtpInit( char  * ipStr, int  port);
+int  rtpSend(RtpSession *session, char  *buffer,  int  len); 

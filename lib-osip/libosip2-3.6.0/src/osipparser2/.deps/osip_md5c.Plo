@@ -1,0 +1,6 @@
+osip_md5c.lo: osip_md5c.c /usr/include/stdc-predef.h \
+ ../../include/osipparser2/osip_md5.h
+
+/usr/include/stdc-predef.h:
+
+../../include/osipparser2/osip_md5.h:

@@ -1,0 +1,74 @@
+
+
+#include <stdio.h>
+#include <signal.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/time.h>
+#include <pthread.h>
+#include <assert.h>
+#include <stdint.h>
+#include <ortp/ortp.h> 
+#include "video_rtp_send.h"
+#include "omx_decode.h"
+#include "omxcam/omxcam.h"
+#include "rtpavcsend.h"
+
+
+struct sockaddr_in s_peer;
+
+struct video_param_send *video_send_param;
+
+
+static void video_encoded(omxcam_buffer_t buff)
+{
+	if(video_send_param->send_quit==0) omxcam_video_stop();
+	//AvcAnalyzeAndSend(rtpsock, buff.data, buff.length);
+	rtpSend(pRtpSession, (char *)buff.data, buff.length); 
+	printf("encoded len=%d\n",buff.length);
+}
+
+
+void *video_send(void *videosendparam){
+
+	video_send_param=videosendparam;
+	omxcam_video_settings_t videoset = {};
+
+	//摄像头/编码器初始化
+	omxcam_video_init(&videoset);
+	videoset.on_data = video_encoded;
+	//摄像头参数设置
+	videoset.camera.width = 1920;
+	videoset.camera.height = 1080;
+	videoset.camera.framerate = 30;
+	videoset.camera.rotation=180;
+	//H264编码器设置
+	videoset.h264.bitrate = 2*1000*1000; //12Mbps
+	videoset.h264.idr_period = 10;	//30 IDR间隔
+	videoset.h264.inline_headers = OMXCAM_TRUE; // SPS/PPS头插入
+	videoset.h264.profile=OMXCAM_H264_AVC_PROFILE_BASELINE;
+
+	// RTP初期化
+	printf("video_send_param:%s:%d\n",video_send_param->dest_ip, video_send_param->dest_port);
+	pRtpSession = rtpInit(video_send_param->dest_ip, video_send_param->dest_port);    //video_send_param->dest_ip, video_send_param->dest_port
+	if (pRtpSession==NULL)     
+	{     
+	printf( "error rtpInit" );   
+	exit(-1);    
+	return  0;     
+	}   
+
+
+	// 开始发送数据--线程被阻塞－－－videoset.on_data = video_encoded;
+	omxcam_video_start(&videoset, OMXCAM_CAPTURE_FOREVER);
+
+
+	rtpExit(pRtpSession);
+
+	//fprintf(stderr,BLUE"[%s@%s]:" NONE"video send thread exit\n", __func__, __FILE__);
+	return NULL;
+	}	
+
+

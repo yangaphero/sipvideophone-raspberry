@@ -1,0 +1,7 @@
+milenage.lo: milenage.c /usr/include/stdc-predef.h milenage.h rijndael.h
+
+/usr/include/stdc-predef.h:
+
+milenage.h:
+
+rijndael.h:
